@@ -77,6 +77,23 @@ call fondopantalla
   call la2
   call sii
 
+  ;inicializamos el mouse y lo mostramos
+  call MOUSE_INIT
+  call MOUSE_SHOW
+
+  ;ciclo infinito para saber que cliqueo
+  cicloinfinito:
+
+  	   ;preguntamos por el estado del MOUSE
+  	   call MOUSE_STATUS
+  	   ;bx = 1 => boton izq presionado
+
+  	   cmp bx, 1
+  	   je modo_texto2;
+
+
+  jmp cicloinfinito
+
   call esperag; espera tecla modo grafico
 ;---------------------------------------------------------------
   call mtexto
@@ -135,6 +152,42 @@ mtexto proc near ; inicia modo texto con colores
   int 10h
  ret
 mtexto endp
+
+; PROCEDURES PARA EL USO DEL MOUSE ============
+
+MOUSE_INIT PROC NEAR ; inicializa mouse, Regresa Ax=0 si hay error, Ax=FFFF si ok, BX=N botones
+  MOV AX,0
+  INT 33H
+RET 
+MOUSE_INIT ENDP
+
+MOUSE_SHOW PROC NEAR ; muestra puntero de mouse
+  MOV AX,1
+  INT 33H
+RET 
+MOUSE_SHOW ENDP
+
+MOUSE_HIDE PROC NEAR ; esconde puntero de mouse
+  MOV AX,2
+  INT 33H
+RET 
+MOUSE_HIDE ENDP
+
+; detecta el estado del mouse
+; Regresa: Bx=1, Boton izq presionado
+;          Bx=2, Boton der presionado
+;          Bx=3, Ambos presionados
+;          Cx=x
+;          Dx=y 
+MOUSE_STATUS PROC NEAR 
+  MOV AX,3
+  INT 33H
+RET 
+MOUSE_STATUS ENDP
+
+
+
+; PROCEDURES PARA DIBUJAR EL PIANO ======================
 
 doo proc near
   mov al,rojo; color
