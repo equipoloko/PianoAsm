@@ -44,6 +44,13 @@ inicio:
   mov ax,@data
   mov ds,ax		;obtenemos la direccion del segmento de datos
 
+  mov ax, 0
+  mov cx, 120
+  mov al, cl
+  mov cl, 80
+  div cl
+  mov cx, ax
+  inc cx
   ;cuerpo principal
 
 modo_texto1:
@@ -80,6 +87,8 @@ call fondopantalla
   ;inicializamos el mouse y lo mostramos
   call MOUSE_INIT
   call MOUSE_SHOW
+  call lim_hor
+  call lim_vert
 
   ;ciclo infinito para saber que cliqueo
   cicloinfinito:
@@ -89,7 +98,13 @@ call fondopantalla
   	   ;bx = 1 => boton izq presionado
 
   	   cmp bx, 1
-  	   je modo_texto2;
+  	   je clic
+  	   cmp bx, 2
+  	   je fin
+  	   jne cicloinfinito
+
+  	   clic:
+  	   call revisador
 
 
   jmp cicloinfinito
@@ -102,12 +117,61 @@ modo_texto2:
   call viewmsg
 
   call espera 
-
+  fin:
   mov ax,4c00h    ;realizamos la salida al dos
   int 21h 
   
 ;-------------------------------fin de programa------------------------------
 
+;PROCEDURES NUESTRAS
+revisador proc NEAR
+  ;Cx=x
+  ;Dx=y 
+  
+  mov ax, 0
+  mov al, cl
+  mov cl, 80
+  div cl
+  mov cx, ax
+  inc cx
+
+  cmp cl, 1
+  je si1
+  jne no1
+  si1:
+    mov bl, ROJO
+    call fondopantalla
+  no1:
+
+  cmp cl, 2
+  je si2
+  jne no2
+  si2:
+    mov bl, AZUL
+    call fondopantalla
+  no2:
+
+ret
+revisador ENDP
+
+lim_hor proc NEAR
+  mov ax, 07h
+  mov cx, 40;min
+  mov dx, 600;max
+  int 33h
+ret
+lim_hor endp
+
+lim_vert proc NEAR
+  mov ax, 08h
+  mov cx, 50;min
+  mov dx, 250;max
+  int 33h
+ret
+lim_vert endp
+
+
+;PROCEDURES DE LA MAESTRA
 clrscr proc near ;limpia la pantalla
   mov ah,00h 
   mov al,03h
