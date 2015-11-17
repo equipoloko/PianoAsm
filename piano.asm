@@ -25,10 +25,28 @@ model small
   magenta2 equ 13
   amarillo equ 14
   blanco equ 15
+  ;notas musicales
+  ndo equ 2281
+  nre equ 2032
+  nmi equ 1810
+  nfa equ 1709
+  nsol equ 1521
+  nla  equ 1355
+  nsi equ 1207
+  ;sostenidas
+  ndos equ 2153
+  nres equ 1918
+  nfas equ 1612
+  nsols equ 1435
+  nlas equ 1280
+  ;--------
+
 
   mensag1 db 'iniciar modo grafico',13,10,'$'   
   mensag2 db 'regresando de modo grafico',13,10,'$'     
   enter1  db  13,10,'$'
+
+  banderaTono db 0
  
 
   mensagx db 'datos'
@@ -85,13 +103,14 @@ call fondopantalla
   call sii
 
   ;inicializamos el mouse y lo mostramos
+  
   call MOUSE_INIT
   call MOUSE_SHOW
   call lim_hor
-  call lim_vert
+  call lim_vert 
 
   ;ciclo infinito para saber que cliqueo
-  cicloinfinito:
+  ciclote:
 
   	   ;preguntamos por el estado del MOUSE
   	   call MOUSE_STATUS
@@ -101,23 +120,18 @@ call fondopantalla
   	   je clic
   	   cmp bx, 2
   	   je fin
-  	   jne cicloinfinito
+  	   jmp ciclote
 
   	   clic:
   	   call revisador
 
+  jmp ciclote
 
-  jmp cicloinfinito
-
-  call esperag; espera tecla modo grafico
+  
 ;---------------------------------------------------------------
-  call mtexto
-modo_texto2:
-  lea dx, mensag2
-  call viewmsg
-
-  call espera 
+ 
   fin:
+  call Apaga_Tono
   mov ax,4c00h    ;realizamos la salida al dos
   int 21h 
   
@@ -127,31 +141,156 @@ modo_texto2:
 revisador proc NEAR
   ;Cx=x
   ;Dx=y 
-  
-  mov ax, 0
-  mov al, cl
-  mov cl, 80
-  div cl
-  mov cx, ax
-  inc cx
+ 
+ ;primero revisaremos la parte superior
+ 
+ ;comparamos que estemos en la parte superior Y < 170
+ mov ax, 170
+ cmp dx, ax
+ jb zonaArriba
+ jae zonaAbajo
 
-  cmp cl, 1
-  je si1
-  jne no1
-  si1:
-    mov bl, ROJO
+
+
+ zonaArriba:
+    ;compararemos las coordenadas x de la zona de arriba
+
+    cmp cx, 100
+    jb nota1
+    cmp cx, 140
+    jb nota2
+    cmp cx, 180
+    jb nota3
+    cmp cx, 220
+    jb nota4
+    cmp cx, 280
+    jb nota5
+    cmp cx, 340
+    jb nota6
+    cmp cx, 380
+    jb nota7
+    cmp cx, 420
+    jb nota8
+    cmp cx, 460
+    jb nota9
+    cmp cx, 500
+    jb nota10
+    cmp cx, 540
+    jb nota11
+    cmp cx, 600
+    jb nota12
+
+
+    jmp saltarEnd
+ zonaAbajo:
+    
+    cmp cx, 120
+    jb nota1
+    cmp cx, 200
+    jb nota3
+    cmp cx, 280
+    jb nota5
+    cmp cx, 360
+    jb nota6
+    cmp cx, 440
+    jb nota8
+    cmp cx, 520
+    jb nota10
+    cmp cx, 600
+    jb nota12
+
+ saltarEnd:
+ ret
+
+
+    nota1:
+      mov bl, negro
+      push bx
+      MOV BX, ndo
+      call TONO
+      pop bx
+      jmp acabar
+    nota2:
+      mov bl, rojo
+      push bx
+      MOV BX, ndos
+      call TONO
+      pop bx
+      jmp acabar
+    nota3:
+     mov bl, rojo2
+     push bx
+      MOV BX, nre
+      call TONO
+      pop bx
+      jmp acabar
+    nota4:
+     mov bl, azul
+     push bx
+      MOV BX, nres
+      call TONO
+      pop bx
+      jmp acabar
+    nota5:
+     mov bl, azul2
+     push bx
+      MOV BX, nmi
+      call TONO
+      pop bx
+      jmp acabar
+    nota6:
+      mov bl, verde
+      push bx
+      MOV BX, nfa
+      call TONO
+      pop bx
+      jmp acabar
+    nota7:
+      mov bl, verde2
+      push bx
+      MOV BX, nfas
+      call TONO
+      pop bx
+      jmp acabar
+    nota8:
+      mov bl, amarillo
+      push bx
+      MOV BX, nsol
+      call TONO
+      pop bx
+      jmp acabar
+    nota9:
+      mov bl, cian
+      push bx
+      MOV BX, nsols
+      call TONO
+      pop bx
+      jmp acabar
+    nota10:
+      mov bl, cian2
+      push bx
+      MOV BX, nla
+      call TONO
+      pop bx
+      jmp acabar
+    nota11:
+      mov bl, verde
+      push bx
+      MOV BX, nlas
+      call TONO
+      pop bx
+      jmp acabar
+    nota12:
+      mov bl, verde2
+      push bx
+      MOV BX, nsi
+      call TONO
+      pop bx
+      jmp acabar
+
+    acabar:
     call fondopantalla
-  no1:
-
-  cmp cl, 2
-  je si2
-  jne no2
-  si2:
-    mov bl, AZUL
-    call fondopantalla
-  no2:
-
-ret
+    ret
 revisador ENDP
 
 lim_hor proc NEAR
@@ -172,6 +311,27 @@ lim_vert endp
 
 
 ;PROCEDURES DE LA MAESTRA
+TONO proc near ; EL TONO SE GUARDA EN BX
+
+  MOV AL, 10110110b ; Número mágico
+  OUT 43h, AL   ; Lo pasa al Timer 2
+  MOV AX, BX    ; Carga tono
+  OUT 42h, AL   ; Parte baja del puerto 42h
+  MOV AL, AH
+  OUT 42h, AL   ; Parte alta del puerto 42h
+  IN AL, 61h    ; Lee puerto 61h
+  OR AL, 3    ; Prende bit 0 y 1
+  OUT 61h, AL   ; Salida del puerto 61h
+  ret
+TONO endp
+
+Apaga_Tono proc near
+  IN AL, 61h    ; Lee puerto 61h
+  AND AL, 11111100b ; Apaga los dos bits LBS
+  OUT 61h, AL ; Salida del puerto 61h
+  ret
+Apaga_Tono endp
+
 clrscr proc near ;limpia la pantalla
   mov ah,00h 
   mov al,03h
@@ -202,6 +362,7 @@ fondopantalla proc near
   mov ah,0bh;peticion
   mov bh,00h
   int 10h
+  ret
 fondopantalla endp
 
 esperag proc near ; espera una tecla en modo grafico
